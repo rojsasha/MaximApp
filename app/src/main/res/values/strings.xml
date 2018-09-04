@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">MaximApp</string>
+    <string name="btn_login">Войти</string>
+    <string name="hint_enterpassword">Введите пароль</string>
+    <string name="hint_enterlogin">Введите логин</string>
+    <string name="auth_length_error">Введите логин или пароль</string>
+    <string name="menu_exit">выход</string>
+    <string name="depatr">Отделы</string>
+    <string name="title_toolbar">Отделы</string>
+
+</resources>

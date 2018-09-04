@@ -1,31 +1,25 @@
 package alex.example.com.maximapp.ui.divisions;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.TextView;
-
-import java.util.ArrayList;
+import android.widget.Toast;
 import java.util.List;
-
 import alex.example.com.maximapp.R;
 import alex.example.com.maximapp.data.entity.Department;
 import alex.example.com.maximapp.data.entity.Employee;
 
-import static android.view.View.GONE;
+public class TreeViewListAdapter extends BaseExpandableListAdapter {
 
-public class SeconLevelListAdapter extends BaseExpandableListAdapter {
-
-    private static final String TAG = "SeconLevelListAdapter";
     private Context mContext;
     private List<Department> mDepartmentList;
-    private List<Department> childList = new ArrayList<>();
+    private int countChild = 0;
 
-    SeconLevelListAdapter(Context context, List<Department> list) {
+    TreeViewListAdapter(Context context, List<Department> list) {
         mContext = context;
         mDepartmentList = list;
     }
@@ -45,7 +39,6 @@ public class SeconLevelListAdapter extends BaseExpandableListAdapter {
 
         return 0;
     }
-
 
     @Override
     public Object getGroup(int i) {
@@ -74,24 +67,18 @@ public class SeconLevelListAdapter extends BaseExpandableListAdapter {
 
     @Override
     public View getGroupView(int i, boolean b, View view, ViewGroup viewGroup) {
-        ViewHolderParent holderParent;
-        if (view == null) {
-            view = LayoutInflater.from(mContext).inflate(R.layout.item_parent, viewGroup, false);
-            holderParent = new ViewHolderParent(view);
-            view.setTag(holderParent);
-        } else {
-            holderParent = (ViewHolderParent) view.getTag();
-        }
-
-        holderParent.tvTitle.setText(mDepartmentList.get(i).getName());
+        LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        view = inflater.inflate(R.layout.item_parent, null);
+        TextView text = view.findViewById(R.id.tvParent);
+        text.setText(mDepartmentList.get(i).getName());
         return view;
     }
 
     @Override
-    public View getChildView(int i, int i1, boolean b, View view, ViewGroup viewGroup) {
-        LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    public View getChildView(final int i, int i1, boolean b, View view, ViewGroup viewGroup) {
 
         if (mDepartmentList.get(i).getEmployees() != null) {
+            LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             view = inflater.inflate(R.layout.item_employee, null);
             ViewHolderChild holderChild = new ViewHolderChild(view);
             Employee employee = mDepartmentList.get(i).getEmployees().get(i1);
@@ -101,36 +88,26 @@ public class SeconLevelListAdapter extends BaseExpandableListAdapter {
             holderChild.tvPhone.setText(employee.getPhone());
 
         } else if (mDepartmentList.get(i).getDepartments() != null) {
-            ViewHolderParent holderParent;
-            if (view == null) {
-                view = LayoutInflater.from(mContext).inflate(R.layout.item_parent, null);
-                holderParent = new ViewHolderParent(view);
-                view.setTag(holderParent);
-            } else {
-                holderParent = (ViewHolderParent) view.getTag();
+            final SecondLevelExpadedListView secondLevelELV = new SecondLevelExpadedListView(mContext);
+            secondLevelELV.setAdapter(new TreeViewListAdapter(mContext, mDepartmentList.get(i).getDepartments()));
+            if (countChild != 0) {
+                secondLevelELV.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                Toast.makeText(mContext, "2222222", Toast.LENGTH_SHORT).show();
             }
+            countChild = mDepartmentList.get(i).getDepartments().size();
 
-            holderParent.tvTitle.setText(mDepartmentList.get(i).getDepartments().get(i1).getName());
+            secondLevelELV.setOnGroupExpandListener(new ExpandableListView.OnGroupExpandListener() {
+                int previousGroup = -1;
 
+                @Override
+                public void onGroupExpand(int groupPosition) {
+                    if (groupPosition != previousGroup)
+                        secondLevelELV.collapseGroup(previousGroup);
+                    previousGroup = groupPosition;
+                }
+            });
 
-//            final SecondLevelExpadedListView secondLevelELV = new SecondLevelExpadedListView(mContext);
-//            secondLevelELV.setAdapter(new SeconLevelListAdapter(mContext, mDepartmentList.get(i).getDepartments()));
-//
-//            Log.d("test", "getChildView: " + mDepartmentList.get(i).getDepartments().size());
-//
-//
-//            secondLevelELV.setOnGroupExpandListener(new ExpandableListView.OnGroupExpandListener() {
-//                int previousGroup = -1;
-//
-//                @Override
-//                public void onGroupExpand(int groupPosition) {
-//                    if (groupPosition != previousGroup)
-//                        secondLevelELV.collapseGroup(previousGroup);
-//                    previousGroup = groupPosition;
-//                }
-//            });
-
-            return view;
+            return secondLevelELV;
         }
 
         return view;
@@ -146,16 +123,6 @@ public class SeconLevelListAdapter extends BaseExpandableListAdapter {
             tvPhone = view.findViewById(R.id.tvPhone);
         }
     }
-
-    class ViewHolderParent {
-        TextView tvTitle;
-
-        ViewHolderParent(View view) {
-            tvTitle = view.findViewById(R.id.tvParent);
-
-        }
-    }
-
 
     @Override
     public boolean isChildSelectable(int i, int i1) {
